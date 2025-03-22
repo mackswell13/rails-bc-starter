@@ -45,6 +45,10 @@ module Authentication
       end
     end
 
+    def terminate_sessions_for(user)
+      user.sessions.destroy_all
+    end
+
     def terminate_session
       Current.session.destroy
       cookies.delete(:session_id)

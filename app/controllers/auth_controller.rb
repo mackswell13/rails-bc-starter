@@ -59,6 +59,7 @@ class AuthController < ApplicationController
 
     # For this app we need to check the user and the store as a user can exist in multiple stores
     if Current.user != user || Current.session.store != store
+      terminate_sessions_for user
       start_new_session_for user, store
     end
 
