@@ -1,4 +1,6 @@
 class AuthController < ApplicationController
+  allow_unauthenticated_access
+
   def auth
     res = HTTParty.post("https://login.bigcommerce.com/oauth2/token", body: {
       "client_id" => Rails.application.credentials.bc_client_id,
@@ -13,23 +15,38 @@ class AuthController < ApplicationController
     if res.success?
       data = res.parsed_response
       owner_data = data["owner"]
-      owner = User.create_with(username: owner_data["username"]).find_or_create_by(email: owner_data["email"])
+      owner = User.create_with(username: owner_data["username"]).find_or_create_by(email_address: owner_data["email"])
 
       user_data = data["user"]
-      user = User.create_with(username: user_data["username"]).find_or_create_by(email: user_data["email"])
+      user = User.create_with(username: user_data["username"]).find_or_create_by(email_address: user_data["email"])
 
       hash = extract_store_hash(data["context"])
       store = Store.create_with(access_token: data["access_token"], scope: data["scope"]).find_or_create_by(store_hash: hash)
+
+      StoreRelationship.create(user: owner, store: store, is_owner: true, bc_id: owner_data["id"])
+
+      if owner != user
+        StoreRelationship.create(user: owner, store: store, is_owner: false, bc_id: user_data["id"])
+      end
+
+      # All of the data is set correctly need to find a good way to process the redirect without needing to serialize a jwt
 
       render plain: store
 
     else
 
-      render plain: "Poo Poo error"
+      render plain: "Eorror with the auth"
     end
   end
 
   def load
+    encoded_token = JWT::EncodedToken.new(params[:signed_payload_jwt])
+
+    encoded_token.verify_signature!(algorithm: "HS256", key: Rails.application.credentials.bc_client_secret)
+
+    # verify claims
+    # login
+
     render plain: params.inspect
   end
 
