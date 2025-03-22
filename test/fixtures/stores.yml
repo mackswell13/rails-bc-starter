@@ -4,8 +4,8 @@
 # model remove the "{}" from the fixture names and add the columns immediately
 # below each fixture, per the syntax in the comments below
 #
-one: {}
-# column: value
+one: 
+  store_hash: 123abc
 #
-two: {}
-# column: value
+two:
+  store_hash: abc123
