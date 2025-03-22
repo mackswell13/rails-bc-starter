@@ -54,13 +54,15 @@ class AuthController < ApplicationController
 
     user = store.users.where("email_address IS ?", user_data["email"]).first
 
-    if Current.user != user
-      puts "Store: ", store
-      puts "User: ", user
+    # resume session if possible
+    resume_session
+
+    # For this app we need to check the user and the store as a user can exist in multiple stores
+    if Current.user != user || Current.user != store
       start_new_session_for user, store
     end
 
-    render plain: Current.session.store
+    redirect_to controller: "pages", action: "home"
   end
 
   private def extract_store_hash(store_string)
