@@ -44,10 +44,23 @@ class AuthController < ApplicationController
 
     encoded_token.verify_signature!(algorithm: "HS256", key: Rails.application.credentials.bc_client_secret)
 
-    # verify claims
-    # login
+    payload = encoded_token.payload
 
-    render plain: params.inspect
+    user_data = payload["user"]
+
+    store_hash = extract_store_hash(payload["sub"])
+
+    store = Store.find_by(store_hash: store_hash)
+
+    user = store.users.where("email_address IS ?", user_data["email"]).first
+
+    if Current.user != user
+      puts "Store: ", store
+      puts "User: ", user
+      start_new_session_for user, store
+    end
+
+    render plain: Current.session.store
   end
 
   private def extract_store_hash(store_string)
